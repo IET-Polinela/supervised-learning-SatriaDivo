@@ -5,90 +5,116 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
-from sklearn.preprocessing import StandardScaler
+from sklearn.impute import SimpleImputer
 
 # === 1. Load Dataset ===
-df_outliers = pd.read_csv("HousePricing.csv")  # Dataset dengan outlier
-df_clean = pd.read_csv("HousePricing_no_outliers.csv")  # Dataset tanpa outlier
+df_outliers = pd.read_csv("HousePricing.csv")
+df_minmax = pd.read_csv("HousePricing_MinMaxScaled.csv")
+df_standard = pd.read_csv("HousePricing_StandardScaled.csv")
 
 # === 2. Memisahkan Fitur (X) dan Target (y) ===
-X_outliers = df_outliers.drop(columns=["SalePrice"])  
-y_outliers = df_outliers["SalePrice"]
+def prepare_data(df):
+    X = df.drop(columns=["SalePrice"])
+    y = df["SalePrice"]
 
-X_clean = df_clean.drop(columns=["SalePrice"])
-y_clean = df_clean["SalePrice"]
+    # Menangani missing values pada fitur numerik dan kategorikal
+    imputer_num = SimpleImputer(strategy='mean')  # Mengganti NaN dengan mean
+    imputer_cat = SimpleImputer(strategy='most_frequent')  # Mengganti NaN dengan modus
 
-# === 3. Mengubah Data Kategorikal ke Numerik ===
-X_outliers = pd.get_dummies(X_outliers, drop_first=True)
-X_clean = pd.get_dummies(X_clean, drop_first=True)
+    # Pisahkan fitur numerik dan kategorikal
+    num_features = X.select_dtypes(include=[np.number]).columns
+    cat_features = X.select_dtypes(include=['object']).columns
 
-# Pastikan kedua dataset memiliki kolom yang sama setelah encoding
-X_outliers, X_clean = X_outliers.align(X_clean, join='left', axis=1, fill_value=0)
+    # Imputasi nilai NaN hanya jika ada fitur dengan tipe data tersebut
+    if len(num_features) > 0:
+        X[num_features] = imputer_num.fit_transform(X[num_features])
 
-# === 4. Membagi Data Menjadi Training dan Testing Set ===
+    if len(cat_features) > 0:
+        X[cat_features] = imputer_cat.fit_transform(X[cat_features])
+
+    # Encoding fitur kategorikal jika ada
+    if len(cat_features) > 0:
+        X = pd.get_dummies(X, drop_first=True, dummy_na=False)
+
+    # Debugging: Periksa apakah masih ada NaN
+    print(f"Jumlah NaN setelah imputasi: {X.isnull().sum().sum()}")  # Harus 0
+
+    return X, y
+
+X_outliers, y_outliers = prepare_data(df_outliers)
+X_minmax, y_minmax = prepare_data(df_minmax)
+X_standard, y_standard = prepare_data(df_standard)
+
+# Pastikan semua dataset memiliki kolom yang sama setelah encoding
+X_outliers, X_minmax = X_outliers.align(X_minmax, join='left', axis=1, fill_value=0)
+X_outliers, X_standard = X_outliers.align(X_standard, join='left', axis=1, fill_value=0)
+
+# Debugging: Pastikan tidak ada NaN setelah imputasi dan encoding
+assert not X_outliers.isnull().values.any(), "X_outliers masih memiliki NaN!"
+assert not X_minmax.isnull().values.any(), "X_minmax masih memiliki NaN!"
+assert not X_standard.isnull().values.any(), "X_standard masih memiliki NaN!"
+
+# === 3. Membagi Data Menjadi Training dan Testing Set ===
 X_train_out, X_test_out, y_train_out, y_test_out = train_test_split(X_outliers, y_outliers, test_size=0.2, random_state=42)
-X_train_clean, X_test_clean, y_train_clean, y_test_clean = train_test_split(X_clean, y_clean, test_size=0.2, random_state=42)
+X_train_minmax, X_test_minmax, y_train_minmax, y_test_minmax = train_test_split(X_minmax, y_minmax, test_size=0.2, random_state=42)
+X_train_standard, X_test_standard, y_train_standard, y_test_standard = train_test_split(X_standard, y_standard, test_size=0.2, random_state=42)
 
-# === 5. Scaling Data (StandardScaler) untuk dataset tanpa outlier ===
-X_train_clean = X_train_clean.fillna(X_train_clean.mean()) # or X_train_clean.fillna(0)
-X_test_clean = X_test_clean.fillna(X_test_clean.mean())  # or X_test_clean.fillna(0)
-
-scaler = StandardScaler()
-X_train_clean_scaled = scaler.fit_transform(X_train_clean)
-X_test_clean_scaled = scaler.transform(X_test_clean)
-
-# === Impute NaN values in X_train_out (Replace NaN with 0) ===
-X_train_out = X_train_out.fillna(0)  # or X_train_out.fillna(X_train_out.mean(), inplace=True)
-X_test_out = X_test_out.fillna(0)    # or X_test_out.fillna(X_test_out.mean(), inplace=True)
-
-
-# === 6. Model Linear Regression ===
+# === 4. Melatih Model Linear Regression ===
 model_out = LinearRegression()
-model_clean = LinearRegression()
+model_minmax = LinearRegression()
+model_standard = LinearRegression()
 
-# Melatih Model
-model_out.fit(X_train_out, y_train_out)  # Dengan outlier
-model_clean.fit(X_train_clean_scaled, y_train_clean)  # Tanpa outlier (scaling diterapkan)
+model_out.fit(X_train_out, y_train_out)
+model_minmax.fit(X_train_minmax, y_train_minmax)
+model_standard.fit(X_train_standard, y_train_standard)
 
-# === 7. Prediksi ===
-y_pred_out = model_out.predict(X_test_out)  # Prediksi dengan outlier
-y_pred_clean = model_clean.predict(X_test_clean_scaled)  # Prediksi tanpa outlier
+# === 5. Prediksi ===
+y_pred_out = model_out.predict(X_test_out)
+y_pred_minmax = model_minmax.predict(X_test_minmax)
+y_pred_standard = model_standard.predict(X_test_standard)
 
-# === 8. Evaluasi Model ===
+# === 6. Evaluasi Model ===
 mse_out = mean_squared_error(y_test_out, y_pred_out)
 r2_out = r2_score(y_test_out, y_pred_out)
 
-mse_clean = mean_squared_error(y_test_clean, y_pred_clean)
-r2_clean = r2_score(y_test_clean, y_pred_clean)
+mse_minmax = mean_squared_error(y_test_minmax, y_pred_minmax)
+r2_minmax = r2_score(y_test_minmax, y_pred_minmax)
+
+mse_standard = mean_squared_error(y_test_standard, y_pred_standard)
+r2_standard = r2_score(y_test_standard, y_pred_standard)
 
 print(f"Model dengan Outlier - MSE: {mse_out:.2f}, R² Score: {r2_out:.2f}")
-print(f"Model tanpa Outlier - MSE: {mse_clean:.2f}, R² Score: {r2_clean:.2f}")
+print(f"Model MinMaxScaler - MSE: {mse_minmax:.2f}, R² Score: {r2_minmax:.2f}")
+print(f"Model StandardScaler - MSE: {mse_standard:.2f}, R² Score: {r2_standard:.2f}")
 
-# === 9. Visualisasi Scatter Plot Prediksi vs Aktual ===
-fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+# === 7. Visualisasi Scatter Plot Prediksi vs Aktual ===
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 fig.suptitle("Scatter Plot: Actual vs Predicted")
 
-# Dengan Outlier
 sns.scatterplot(x=y_test_out, y=y_pred_out, alpha=0.6, ax=axes[0])
 axes[0].plot([y_test_out.min(), y_test_out.max()], [y_test_out.min(), y_test_out.max()], color="red", linestyle="--")
 axes[0].set_title("Dengan Outlier")
 axes[0].set_xlabel("Actual Values")
 axes[0].set_ylabel("Predicted Values")
 
-# Tanpa Outlier
-sns.scatterplot(x=y_test_clean, y=y_pred_clean, alpha=0.6, ax=axes[1])
-axes[1].plot([y_test_clean.min(), y_test_clean.max()], [y_test_clean.min(), y_test_clean.max()], color="red", linestyle="--")
-axes[1].set_title("Tanpa Outlier (Scaling)")
+sns.scatterplot(x=y_test_minmax, y=y_pred_minmax, alpha=0.6, ax=axes[1])
+axes[1].plot([y_test_minmax.min(), y_test_minmax.max()], [y_test_minmax.min(), y_test_minmax.max()], color="red", linestyle="--")
+axes[1].set_title("MinMaxScaler")
 axes[1].set_xlabel("Actual Values")
 axes[1].set_ylabel("Predicted Values")
 
+sns.scatterplot(x=y_test_standard, y=y_pred_standard, alpha=0.6, ax=axes[2])
+axes[2].plot([y_test_standard.min(), y_test_standard.max()], [y_test_standard.min(), y_test_standard.max()], color="red", linestyle="--")
+axes[2].set_title("StandardScaler")
+axes[2].set_xlabel("Actual Values")
+axes[2].set_ylabel("Predicted Values")
+
 plt.show()
 
-# === 10. Residual Plot ===
-fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+# === 8. Visualisasi Residual Plot ===
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 fig.suptitle("Residual Plot")
 
-# Dengan Outlier
 residuals_out = y_test_out - y_pred_out
 sns.scatterplot(x=y_pred_out, y=residuals_out, alpha=0.6, ax=axes[0])
 axes[0].axhline(y=0, color="red", linestyle="--")
@@ -96,30 +122,33 @@ axes[0].set_title("Dengan Outlier")
 axes[0].set_xlabel("Predicted Values")
 axes[0].set_ylabel("Residuals")
 
-# Tanpa Outlier
-residuals_clean = y_test_clean - y_pred_clean
-sns.scatterplot(x=y_pred_clean, y=residuals_clean, alpha=0.6, ax=axes[1])
+residuals_minmax = y_test_minmax - y_pred_minmax
+sns.scatterplot(x=y_pred_minmax, y=residuals_minmax, alpha=0.6, ax=axes[1])
 axes[1].axhline(y=0, color="red", linestyle="--")
-axes[1].set_title("Tanpa Outlier (Scaling)")
+axes[1].set_title("MinMaxScaler")
 axes[1].set_xlabel("Predicted Values")
 axes[1].set_ylabel("Residuals")
 
+residuals_standard = y_test_standard - y_pred_standard
+sns.scatterplot(x=y_pred_standard, y=residuals_standard, alpha=0.6, ax=axes[2])
+axes[2].axhline(y=0, color="red", linestyle="--")
+axes[2].set_title("StandardScaler")
+axes[2].set_xlabel("Predicted Values")
+axes[2].set_ylabel("Residuals")
+
 plt.show()
 
-# === 11. Distribusi Residual ===
-fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+# === 9. Visualisasi Distribusi Residual ===
+fig, axes = plt.subplots(1, 3, figsize=(18, 5))
 fig.suptitle("Distribusi Residual")
 
-# Dengan Outlier
 sns.histplot(residuals_out, bins=30, kde=True, ax=axes[0])
-axes[0].axvline(x=0, color="red", linestyle="--")
 axes[0].set_title("Dengan Outlier")
-axes[0].set_xlabel("Residuals")
 
-# Tanpa Outlier
-sns.histplot(residuals_clean, bins=30, kde=True, ax=axes[1])
-axes[1].axvline(x=0, color="red", linestyle="--")
-axes[1].set_title("Tanpa Outlier (Scaling)")
-axes[1].set_xlabel("Residuals")
+sns.histplot(residuals_minmax, bins=30, kde=True, ax=axes[1])
+axes[1].set_title("MinMaxScaler")
+
+sns.histplot(residuals_standard, bins=30, kde=True, ax=axes[2])
+axes[2].set_title("StandardScaler")
 
 plt.show()
