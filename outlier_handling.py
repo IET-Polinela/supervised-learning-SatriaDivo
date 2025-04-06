@@ -4,39 +4,40 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
 
-# Load dataset
+# === Load Dataset ===
 file_path = "HousePricing.csv"
 df = pd.read_csv(file_path)
 
-# Menampilkan boxplot untuk setiap fitur numerik untuk visualisasi outlier
+# === Visualisasi Boxplot Awal ===
 numeric_df = df.select_dtypes(include=["number"])
 
-# Membuat boxplot untuk semua fitur numerik
 plt.figure(figsize=(12, 8))
 sns.boxplot(data=numeric_df)
 plt.xticks(rotation=90)
-plt.title('Boxplot untuk Semua Fitur Numerik')
+plt.title('Boxplot Sebelum Menghapus Outlier')
+plt.tight_layout()
 plt.show()
 
-# Mengidentifikasi outlier menggunakan Z-Score
-z_scores = np.abs(stats.zscore(numeric_df))
-outliers_zscore = (z_scores > 3).all(axis=1)
+# === Deteksi Outlier dengan IQR ===
+Q1 = numeric_df.quantile(0.25)
+Q3 = numeric_df.quantile(0.75)
+IQR = Q3 - Q1
+outliers_iqr = ((numeric_df < (Q1 - 1.5 * IQR)) | (numeric_df > (Q3 + 1.5 * IQR))).any(axis=1)
 
-# Menampilkan jumlah data dengan outlier (menggunakan Z-Score)
-print(f"Jumlah baris dengan outlier berdasarkan Z-Score: {sum(outliers_zscore)}")
+print(f"Jumlah baris dengan outlier berdasarkan IQR: {outliers_iqr.sum()}")
 
-# Menghapus outlier (menggunakan Z-Score)
-df_no_outliers = df[~outliers_zscore]
+# Dataset tanpa outlier (IQR)
+df_iqr = df[~outliers_iqr]
 
-# Visualisasi boxplot setelah menghapus outlier
-numeric_df_no_outliers = df_no_outliers.select_dtypes(include=["number"])
+# === Visualisasi Boxplot Setelah Menghapus Outlier ===
 plt.figure(figsize=(12, 8))
-sns.boxplot(data=numeric_df_no_outliers)
+sns.boxplot(data=df_iqr.select_dtypes(include=["number"]))
 plt.xticks(rotation=90)
 plt.title('Boxplot Setelah Menghapus Outlier')
+plt.tight_layout()
 plt.show()
 
-# Menyimpan dataset dengan dan tanpa outlier
-df_no_outliers.to_csv("HousePricing_no_outliers.csv", index=False)
+# === Menyimpan Dataset Tanpa Outlier ===
+df_iqr.to_csv("HousePricing_no_outliers.csv", index=False)
 
-print("Dataset dengan outlier telah dihapus dan disimpan sebagai 'HousePricing_no_outliers.csv'.")
+print("Dataset tanpa outlier telah disimpan sebagai 'HousePricing_no_outliers.csv'.")
