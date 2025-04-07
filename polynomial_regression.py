@@ -15,7 +15,7 @@ datasets = {
 # Loop untuk setiap dataset
 for dataset_name, file_path in datasets.items():
     print(f"\nProcessing dataset: {dataset_name}")
-    
+
     # Load dataset
     data = pd.read_csv(file_path)
 
@@ -25,8 +25,8 @@ for dataset_name, file_path in datasets.items():
         data.fillna(data.mean(), inplace=True)
 
     # Pisahkan fitur dan target
-    X = data[['OverallQual']]
-    y = data['SalePrice']
+    X = data[['OverallQual']]  # Fitur prediktor: penilaian kualitas rumah
+    y = data['SalePrice']      # Target: harga jual rumah
 
     # Split train-test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -65,7 +65,7 @@ for dataset_name, file_path in datasets.items():
     print(f"Polynomial Regression (Degree 2) - MSE: {mse_poly2:.2f}, R2: {r2_poly2:.2f}")
     print(f"Polynomial Regression (Degree 3) - MSE: {mse_poly3:.2f}, R2: {r2_poly3:.2f}")
 
-    # Visualisasi
+    # Visualisasi prediksi pada data asli
     plt.figure(figsize=(15, 4))
     plt.suptitle(f"Model Comparison for {dataset_name}", fontsize=16)
 
@@ -74,25 +74,40 @@ for dataset_name, file_path in datasets.items():
     plt.scatter(X_test, y_test, color='blue', label='Actual')
     plt.plot(X_test, y_pred_linear, color='red', label='Predicted')
     plt.title("Linear Regression")
-    plt.xlabel("Id")
+    plt.xlabel("OverallQual")
     plt.ylabel("SalePrice")
     plt.legend()
 
     # Poly 2
     plt.subplot(1, 3, 2)
     plt.scatter(X_test, y_test, color='blue', label='Actual')
-    plt.plot(X_test, y_pred_poly2, color='green', label='Predicted')
+    plt.scatter(X_test, y_pred_poly2, color='green', label='Predicted')
     plt.title("Polynomial Regression (Degree 2)")
-    plt.xlabel("Id")
+    plt.xlabel("OverallQual")
     plt.legend()
 
     # Poly 3
     plt.subplot(1, 3, 3)
     plt.scatter(X_test, y_test, color='blue', label='Actual')
-    plt.plot(X_test, y_pred_poly3, color='purple', label='Predicted')
+    plt.scatter(X_test, y_pred_poly3, color='purple', label='Predicted')
     plt.title("Polynomial Regression (Degree 3)")
-    plt.xlabel("Id")
+    plt.xlabel("OverallQual")
     plt.legend()
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+    # Scatter plot perbandingan nilai aktual vs prediksi
+    plt.figure(figsize=(10, 6))
+    plt.scatter(y_test, y_pred_linear, color='red', label='Linear Regression', alpha=0.6)
+    plt.scatter(y_test, y_pred_poly2, color='green', label='Polynomial Degree 2', alpha=0.6)
+    plt.scatter(y_test, y_pred_poly3, color='purple', label='Polynomial Degree 3', alpha=0.6)
+    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], color='black', linestyle='--', label='Ideal Prediction')
+
+    plt.xlabel("Actual SalePrice")
+    plt.ylabel("Predicted SalePrice")
+    plt.title(f"Actual vs Predicted Comparison ({dataset_name})")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
     plt.show()
