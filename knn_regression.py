@@ -14,20 +14,33 @@ from sklearn.metrics import mean_squared_error, r2_score
 # === Load Dataset ===
 df_minmax = pd.read_csv("HousePricing_MinMaxScaled.csv")
 df_standard = pd.read_csv("HousePricing_StandardScaled.csv")
+df_no_outliers = pd.read_csv("HousePricing_no_outliers.csv")
 
 # Fungsi preprocessing
 def prepare_data(df):
     X = df.drop(columns=["SalePrice", "Id"], errors="ignore")
     y = df["SalePrice"]
 
+    # Ubah kolom kategorikal ke dummy variables
+    X = pd.get_dummies(X, drop_first=True)
+
+    # Hapus kolom yang semua nilainya NaN
+    X = X.dropna(axis=1, how='all')
+
+    # Imputasi nilai kosong dengan mean
     imputer = SimpleImputer(strategy='mean')
-    X = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
+    X_imputed = imputer.fit_transform(X)
+
+    # Buat DataFrame baru dengan kolom yang cocok
+    X = pd.DataFrame(X_imputed, columns=X.columns)
+
     return X, y
 
 # Siapkan dataset
 datasets = {
     "MinMaxScaler": prepare_data(df_minmax),
-    "StandardScaler": prepare_data(df_standard)
+    "StandardScaler": prepare_data(df_standard),
+    "No Outliers": prepare_data(df_no_outliers)
 }
 
 # Nilai K untuk KNN
