@@ -14,7 +14,6 @@ from sklearn.metrics import mean_squared_error, r2_score
 # === Load Dataset ===
 df_minmax = pd.read_csv("HousePricing_MinMaxScaled.csv")
 df_standard = pd.read_csv("HousePricing_StandardScaled.csv")
-df_no_outliers = pd.read_csv("HousePricing_no_outliers.csv")
 
 # Fungsi preprocessing
 def prepare_data(df):
@@ -39,8 +38,7 @@ def prepare_data(df):
 # Siapkan dataset
 datasets = {
     "MinMaxScaler": prepare_data(df_minmax),
-    "StandardScaler": prepare_data(df_standard),
-    "No Outliers": prepare_data(df_no_outliers)
+    "StandardScaler": prepare_data(df_standard)
 }
 
 # Nilai K untuk KNN
@@ -98,38 +96,83 @@ for name, (X, y) in datasets.items():
     # Simpan hasil
     comparison_results[name] = result
 
-# === Cetak Nilai dan Visualisasi ===
-for name in comparison_results:
+    # === Cetak Nilai dan Visualisasi ===
     print(f"\n=== Hasil Evaluasi Model: {name} Dataset ===")
     print("{:<20s} | {:>12s} | {:>6s}".format("Model", "MSE", "R²"))
     print("-" * 45)
 
-    model_names = list(comparison_results[name].keys())
+    model_names = list(result.keys())
     mse_values = []
     r2_values = []
 
     for model in model_names:
-        mse = comparison_results[name][model]["MSE"]
-        r2 = comparison_results[name][model]["R²"]
+        mse = result[model]["MSE"]
+        r2 = result[model]["R²"]
         mse_values.append(mse)
         r2_values.append(r2)
         print("{:<20s} | {:12.2f} | {:6.3f}".format(model, mse, r2))
 
-    # Visualisasi
+    # Visualisasi Bar Chart
     plt.figure(figsize=(14, 6))
     plt.suptitle(f"Perbandingan Model pada {name} Dataset", fontsize=14)
 
-    # MSE plot
+    # MSE
     plt.subplot(1, 2, 1)
     plt.barh(model_names, mse_values, color='skyblue')
     plt.xlabel("MSE")
     plt.title("Perbandingan MSE")
 
-    # R² plot
+    # R²
     plt.subplot(1, 2, 2)
     plt.barh(model_names, r2_values, color='salmon')
     plt.xlabel("R² Score")
     plt.title("Perbandingan R²")
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+    # === SCATTER PLOT Prediksi vs Aktual ===
+
+    # KNN Grouped Plot
+    plt.figure(figsize=(6, 6))
+    for k in k_values:
+        knn = KNeighborsRegressor(n_neighbors=k)
+        knn.fit(X_train, y_train)
+        y_pred = knn.predict(X_test)
+        plt.scatter(y_test, y_pred, alpha=0.5, label=f"KNN k={k}")
+    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', lw=2)
+    plt.xlabel("Actual SalePrice")
+    plt.ylabel("Predicted SalePrice")
+    plt.title(f"Aktual vs Prediksi - KNN ({name})")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    # Polynomial Regression Grouped Plot
+    plt.figure(figsize=(6, 6))
+    y_pred_poly2 = poly2.predict(X_test)
+    y_pred_poly3 = poly3.predict(X_test)
+    plt.scatter(y_test, y_pred_poly2, alpha=0.5, label="Poly deg=2")
+    plt.scatter(y_test, y_pred_poly3, alpha=0.5, label="Poly deg=3")
+    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', lw=2)
+    plt.xlabel("Actual SalePrice")
+    plt.ylabel("Predicted SalePrice")
+    plt.title(f"Aktual vs Prediksi - Polynomial ({name})")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
+    # Linear Regression Plot
+    plt.figure(figsize=(6, 6))
+    y_pred_lr = lr.predict(X_test)
+    plt.scatter(y_test, y_pred_lr, alpha=0.5, label="Linear Regression", color="orange")
+    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--', lw=2)
+    plt.xlabel("Actual SalePrice")
+    plt.ylabel("Predicted SalePrice")
+    plt.title(f"Aktual vs Prediksi - Linear Regression ({name})")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
     plt.show()
