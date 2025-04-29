@@ -95,6 +95,7 @@ for dataset_name, file_path in datasets.items():
     plt.legend()
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.savefig(f"6_{dataset_name}_Model_Comparison.png")  # Save plot as PNG
     plt.show()
 
     # Scatter plot perbandingan nilai aktual vs prediksi
@@ -110,4 +111,5 @@ for dataset_name, file_path in datasets.items():
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
+    plt.savefig(f"6_{dataset_name}_Actual_vs_Predicted.png")  # Save plot as PNG
     plt.show()
