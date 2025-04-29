@@ -25,6 +25,7 @@ for i, col in enumerate(valid_numeric_df.columns, 1):
     plt.title(f"Before: {col}")
 
 plt.tight_layout(rect=[0, 0, 1, 0.95])
+plt.savefig("Distribusi_Sebelum_Scaling.png")  # Menyimpan visualisasi sebelum scaling
 plt.show()
 
 # StandardScaler
@@ -50,6 +51,7 @@ for i, col in enumerate(scaled_standard_df.columns, 1):
     plt.title(f"Standard: {col}")
 
 plt.tight_layout(rect=[0, 0, 1, 0.95])
+plt.savefig("4Distribusi_After_StandardScaler.png")  # Menyimpan visualisasi setelah StandardScaler
 plt.show()
 
 # Visualisasi setelah MinMaxScaler
@@ -61,6 +63,7 @@ for i, col in enumerate(scaled_minmax_df.columns, 1):
     plt.title(f"MinMax: {col}")
 
 plt.tight_layout(rect=[0, 0, 1, 0.95])
+plt.savefig("4Distribusi_After_MinMaxScaler.png")  # Menyimpan visualisasi setelah MinMaxScaler
 plt.show()
 
 # Output head hasil scaling
