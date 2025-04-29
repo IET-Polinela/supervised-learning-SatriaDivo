@@ -109,6 +109,7 @@ axes[2].set_title("StandardScaler")
 axes[2].set_xlabel("Actual Values")
 axes[2].set_ylabel("Predicted Values")
 
+plt.savefig("5scatter_plot.png")  # Menyimpan visualisasi scatter plot
 plt.show()
 
 # === 8. Visualisasi Residual Plot ===
@@ -136,6 +137,7 @@ axes[2].set_title("StandardScaler")
 axes[2].set_xlabel("Predicted Values")
 axes[2].set_ylabel("Residuals")
 
+plt.savefig("5residual_plot.png")  # Menyimpan visualisasi residual plot
 plt.show()
 
 # === 9. Visualisasi Distribusi Residual ===
@@ -151,4 +153,5 @@ axes[1].set_title("MinMaxScaler")
 sns.histplot(residuals_standard, bins=30, kde=True, ax=axes[2])
 axes[2].set_title("StandardScaler")
 
+plt.savefig("5residual_distribution.png")  # Menyimpan visualisasi distribusi residual
 plt.show()
