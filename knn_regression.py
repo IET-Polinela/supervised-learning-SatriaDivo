@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
@@ -129,6 +128,7 @@ for name, (X, y) in datasets.items():
     plt.title("Perbandingan R²")
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.savefig(f"7bar_chart_{name}.png")  # Menyimpan bar chart
     plt.show()
 
     # === SCATTER PLOT Prediksi vs Aktual ===
@@ -147,6 +147,7 @@ for name, (X, y) in datasets.items():
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
+    plt.savefig(f"7knn_scatter_{name}.png")  # Menyimpan KNN scatter plot
     plt.show()
 
     # Polynomial Regression Grouped Plot
@@ -162,6 +163,7 @@ for name, (X, y) in datasets.items():
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
+    plt.savefig(f"7poly_scatter_{name}.png")  # Menyimpan Polynomial scatter plot
     plt.show()
 
     # Linear Regression Plot
@@ -175,4 +177,5 @@ for name, (X, y) in datasets.items():
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
+    plt.savefig(f"7lr_scatter_{name}.png")  # Menyimpan Linear Regression scatter plot
     plt.show()
